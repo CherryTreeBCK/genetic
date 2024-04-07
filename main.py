@@ -35,6 +35,7 @@ def main():
     # Create a population
     # mr: 0.1, pop_size=100, loss_fnc='acc'
     # mr: 0.1, pop_size=100, loss_fnc='log'
+    # mr: 
     population = genetic.GeneticAlgorithm(network_size=[train_x.shape[1], 16, train_y.shape[1]], mr=0.1, pop_size=100, loss_fnc='acc')
     
     print_every_x_generations = 1

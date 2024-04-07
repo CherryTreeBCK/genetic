@@ -8,7 +8,7 @@ class GeneticAlgorithm:
     # pop_size: Population size
     # mr: Mutation rate
     # dr: Decay rate - 0 means no decay, 1 means instant decay
-    def __init__(self, network_size=[2, 3, 1], pop_size=100, mr=0.05, dr=0.001, cr=0.90, loss_fnc='log') -> None:
+    def __init__(self, network_size=[2, 3, 1], pop_size=100, mr=0.05, dr=0.001, cr=0.95, loss_fnc='log') -> None:
         self.population = []
         self.mr = mr # mutation rate
         self.dr = dr # decay rate
@@ -121,15 +121,15 @@ class GeneticAlgorithm:
             parent2 = self.selection(fitness_scores)
             
             child = self.crossover( parent1, parent2)
-            # prob = random.random()
-            # if prob < self.cr / 2:
-            #     child = self.crossover(parent1, parent2)
-            # elif prob < self.cr:
-            #     child = self.crossover(parent1, parent2)
-            #     child.mutate()
-            # else:
-            #     child = NeuralNetwork(shape=self.network_size)
-            self.mutation(child)
+            prob = random.random()
+            
+            if prob < self.cr / 2:
+                child = self.crossover(parent1, parent2)
+            elif prob < self.cr:
+                child = self.crossover(parent1, parent2)
+                self.mutation(child)
+            else:
+                child = NeuralNetwork(shape=self.network_size)
             
             new_population.append(child)
             
