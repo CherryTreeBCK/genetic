@@ -5,22 +5,26 @@ import random
 class GeneticAlgorithm:
     # Genetic Algorithm class
     # network_size: The size of the neural network
-    # mr: Mutation rate
     # pop_size: Population size
-    # dr: Decay rate
-    def __init__(self, network_size=[2, 3, 1], pop_size=100, mr=0.05, dr=0.001, loss_fnc='mse') -> None:
+    # mr: Mutation rate
+    # dr: Decay rate - 0 means no decay, 1 means instant decay
+    def __init__(self, network_size=[2, 3, 1], pop_size=100, mr=0.05, dr=0.001, cr=0.90, loss_fnc='log') -> None:
         self.population = []
-        self.mr = mr
-        self.dr = dr
+        self.mr = mr # mutation rate
+        self.dr = dr # decay rate
+        self.cr = cr # crossover rate
         self.generation = 0
-        self.loss_fnc = loss_fnc
+        self.loss_fnc = loss_fnc # loss function
+        self.network_size = network_size
         
         for i in range(pop_size):
             self.population.append(NeuralNetwork(shape=network_size))
-        
+    
+    # get current generation
     def get_generation(self):
         return self.generation
     
+    # generates fitness scores for each agent
     def fitness(self, inputs, targets):
         fitness_scores = []
         for network in self.population:
@@ -43,6 +47,40 @@ class GeneticAlgorithm:
         for layer in range(len(network.weights)):
             network.weights[layer] += (np.random.randn(*network.weights[layer].shape) * 0.5) * cur_mr
             network.bias[layer] += (np.random.randn(*network.bias[layer].shape) * 0.5) * cur_mr
+            
+    def crossover(self, parent1, parent2):
+        """
+        Performs a uniform crossover between two parent neural networks
+        to produce an offspring neural network.
+
+        Args:
+            parent1 (NeuralNetwork): The first parent network.
+            parent2 (NeuralNetwork): The second parent network.
+
+        Returns:
+            NeuralNetwork: The offspring network resulting from the crossover.
+        """
+        # Ensure both networks have the same structure
+        assert len(parent1.weights) == len(parent2.weights), "Parents must have the same number of layers"
+        assert all(p1w.shape == p2w.shape for p1w, p2w in zip(parent1.weights, parent2.weights)), "Parents must have matching layer shapes"
+        
+        offspring = NeuralNetwork([len(parent1.bias[0])])  # Dummy shape, will be overwritten
+        offspring.weights = []
+        offspring.bias = []
+        
+        for p1w, p2w, p1b, p2b in zip(parent1.weights, parent2.weights, parent1.bias, parent2.bias):
+            # For weights
+            mask_w = np.random.rand(*p1w.shape) > 0.5  # Generate a mask of booleans
+            offspring_w = np.where(mask_w, p1w, p2w)  # Choose from p1w where mask is True, else from p2w
+            
+            # For biases
+            mask_b = np.random.rand(*p1b.shape) > 0.5  # Similar mask for biases
+            offspring_b = np.where(mask_b, p1b, p2b)
+            
+            offspring.weights.append(offspring_w)
+            offspring.bias.append(offspring_b)
+            
+        return offspring
 
     
     def selection(self, fitness_scores, method="Roulette"):
@@ -74,12 +112,25 @@ class GeneticAlgorithm:
     def make_babies(self, inputs, targets):
         new_population = []
         fitness_scores = self.fitness(inputs, targets)
-        # Elitism
+        # Elitism - ensure the next generation is at least as good
         new_population.append(self.selection(fitness_scores, method="Elitism"))
         
+        # Roulette Fill the remaining population
         while len(new_population) < len(self.population):
-            child = self.selection(fitness_scores)
+            parent1 = self.selection(fitness_scores)
+            parent2 = self.selection(fitness_scores)
+            
+            child = self.crossover( parent1, parent2)
+            # prob = random.random()
+            # if prob < self.cr / 2:
+            #     child = self.crossover(parent1, parent2)
+            # elif prob < self.cr:
+            #     child = self.crossover(parent1, parent2)
+            #     child.mutate()
+            # else:
+            #     child = NeuralNetwork(shape=self.network_size)
             self.mutation(child)
+            
             new_population.append(child)
             
         self.population = new_population

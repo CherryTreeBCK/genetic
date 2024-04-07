@@ -33,7 +33,9 @@ def main():
     test_y[np.arange(test_labels.shape[0]), test_labels] = 1
 
     # Create a population
-    population = genetic.GeneticAlgorithm(network_size=[train_x.shape[1], 16, train_y.shape[1]], mr=0.1, pop_size=100, loss_fnc='log')
+    # mr: 0.1, pop_size=100, loss_fnc='acc'
+    # mr: 0.1, pop_size=100, loss_fnc='log'
+    population = genetic.GeneticAlgorithm(network_size=[train_x.shape[1], 16, train_y.shape[1]], mr=0.1, pop_size=100, loss_fnc='acc')
     
     print_every_x_generations = 1
     # Perform the genetic algorithm
